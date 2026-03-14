@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { ArrowLeft, BookOpen, UserCheck, Plus, CircleDollarSign, Trash2 } from 'lucide-react';
 
 const BookInventory = () => {
@@ -49,8 +49,8 @@ const BookInventory = () => {
     try {
       const token = localStorage.getItem('token');
       const [programsRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5001/api/programs', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5001/api/auth/users', { headers: { Authorization: `Bearer ${token}` } })
+        api.get('/programs', { headers: { Authorization: `Bearer ${token}` } }),
+        api.get('/auth/users', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setPrograms(programsRes.data);
       setUsers(usersRes.data);
@@ -68,8 +68,8 @@ const BookInventory = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       const [typesRes, booksRes] = await Promise.all([
-        axios.get(`http://localhost:5001/api/books/types/${programId}`, { headers }),
-        axios.get(`http://localhost:5001/api/books/inventory/${programId}`, { headers })
+        api.get(`/books/types/${programId}`, { headers }),
+        api.get(`/books/inventory/${programId}`, { headers })
       ]);
       setBookTypes(typesRes.data);
       setBooks(booksRes.data);
@@ -85,13 +85,13 @@ const BookInventory = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/books/types', 
+      await api.post('/books/types', 
         { ...typeForm, program: selectedProgram },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setShowAddType(false);
       fetchProgramData(selectedProgram);
-    } catch (error) {
+    } catch {
       alert('Failed to create book type');
     }
   };
@@ -100,7 +100,7 @@ const BookInventory = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/books/inventory', 
+      await api.post('/books/inventory', 
         { 
           program: selectedProgram,
           bookType: inventoryForm.bookType,
@@ -120,14 +120,14 @@ const BookInventory = () => {
     if (assignUserIds.length === 0) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/books/${bookId}/assign`,
+      await api.put(`/books/${bookId}/assign`,
         { assignedTo: assignUserIds, programId: selectedProgram },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAssignBookId(null);
       setAssignUserIds([]);
       fetchProgramData(selectedProgram);
-    } catch (error) {
+    } catch {
       alert('Failed to assign book');
     }
   };
@@ -146,7 +146,7 @@ const BookInventory = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/collections', 
+      await api.post('/collections', 
         { 
           program: selectedProgram,
           couponBook: bookId,
@@ -158,7 +158,7 @@ const BookInventory = () => {
       setCollectBookId(null);
       setCollectAmount('');
       fetchProgramData(selectedProgram);
-    } catch (error) {
+    } catch {
       alert('Failed to record collection');
     }
   };
@@ -167,7 +167,7 @@ const BookInventory = () => {
     if (!window.confirm('Delete this book type?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/books/types/${typeId}`, {
+      await api.delete(`/books/types/${typeId}`, {
         params: { programId: selectedProgram },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -181,7 +181,7 @@ const BookInventory = () => {
     if (!window.confirm('Delete this coupon book?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/books/inventory/${bookId}`, {
+      await api.delete(`/books/inventory/${bookId}`, {
         params: { programId: selectedProgram },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -197,7 +197,7 @@ const BookInventory = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/books/inventory/bulk-delete',
+      await api.post('/books/inventory/bulk-delete',
         { bookIds: selectedBookIds, programId: selectedProgram },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -228,7 +228,7 @@ const BookInventory = () => {
     try {
       const token = localStorage.getItem('token');
       // Fetch the collections for this program
-      const { data: collectionsResponse } = await axios.get(`http://localhost:5001/api/collections/program/${selectedProgram}`, {
+      const { data: collectionsResponse } = await api.get(`/collections/program/${selectedProgram}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -240,7 +240,7 @@ const BookInventory = () => {
          return alert("No recent collection found to revert.");
       }
 
-      await axios.delete(`http://localhost:5001/api/collections/${latestCollection._id}`, {
+      await api.delete(`/collections/${latestCollection._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -272,7 +272,7 @@ const BookInventory = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/books/inventory/${bookId}/assignment/edit`,
+      await api.put(`/books/inventory/${bookId}/assignment/edit`,
         { ...editAssignmentData, programId: selectedProgram },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -287,7 +287,7 @@ const BookInventory = () => {
     if (!window.confirm('Are you sure you want to unassign this book? It will return to inventory as "Available".')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/books/inventory/${bookId}/unassign`,
+      await api.put(`/books/inventory/${bookId}/unassign`, 
         { programId: selectedProgram },
         { headers: { Authorization: `Bearer ${token}` } }
       );

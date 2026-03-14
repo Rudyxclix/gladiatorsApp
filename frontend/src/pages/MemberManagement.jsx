@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { ArrowLeft, Plus, Users, Edit3, Trash2, Power, PowerOff } from 'lucide-react';
 
 const MemberManagement = () => {
@@ -28,7 +28,7 @@ const MemberManagement = () => {
   const fetchMembers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.get('http://localhost:5001/api/users', {
+      const { data } = await api.get('/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMembers(data);
@@ -48,11 +48,11 @@ const MemberManagement = () => {
         const payload = { ...formData };
         if (!payload.password) delete payload.password;
 
-        await axios.put(`http://localhost:5001/api/users/${editingId}`, payload, {
+        await api.put(`/users/${editingId}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('http://localhost:5001/api/users', formData, {
+        await api.post('/users', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -89,7 +89,7 @@ const MemberManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.delete(`http://localhost:5001/api/users/${member._id}`, {
+      const { data } = await api.delete(`/users/${member._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -104,11 +104,11 @@ const MemberManagement = () => {
   const toggleStatus = async (member) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/users/${member._id}`, { isActive: !member.isActive }, {
+      await api.put(`/users/${member._id}`, { isActive: !member.isActive }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchMembers();
-    } catch (error) {
+    } catch {
        alert('Failed to update status');
     }
   };

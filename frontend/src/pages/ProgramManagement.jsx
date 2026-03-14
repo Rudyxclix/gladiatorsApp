@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { ArrowLeft, Plus, Calendar, Settings, Edit3, Trash2 } from 'lucide-react';
 
 const ProgramManagement = () => {
@@ -25,7 +25,7 @@ const ProgramManagement = () => {
   const fetchPrograms = async () => {
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.get('http://localhost:5001/api/programs', {
+        const { data } = await api.get('/programs', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPrograms(data);
@@ -42,13 +42,13 @@ const ProgramManagement = () => {
       const token = localStorage.getItem('token');
       if (editingId) {
         // Update existing program
-        const { data } = await axios.put(`http://localhost:5001/api/programs/${editingId}`, formData, {
+        const { data } = await api.put(`/programs/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPrograms(programs.map(p => p._id === editingId ? data : p));
       } else {
         // Create new program
-        const { data } = await axios.post('http://localhost:5001/api/programs', formData, {
+        const { data } = await api.post('/programs', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPrograms([data, ...programs]);
@@ -65,7 +65,7 @@ const ProgramManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/programs/${program._id}`, {
+      await api.delete(`/programs/${program._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchPrograms();
@@ -96,7 +96,7 @@ const ProgramManagement = () => {
     const newStatus = currentStatus === 'Active' ? 'Completed' : 'Active';
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/programs/${id}/status`, 
+      await api.put(`/programs/${id}/status`, 
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` }}
       );

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { Activity, BookOpen, IndianRupee, Users, LogOut, TrendingUp, Presentation } from 'lucide-react';
 
 const Dashboard = () => {
@@ -14,11 +14,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    navigate('/login');
+  }, [navigate]);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get('http://localhost:5001/api/collections/stats', {
+        const { data } = await api.get('/collections/stats', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(data);
@@ -33,28 +40,24 @@ const Dashboard = () => {
     };
 
     fetchStats();
-  }, []);
+  }, [handleLogout]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('user');
-    navigate('/login');
+  const StatCard = ({ title, value, icon, color, bg }) => {
+    const IconComponent = icon;
+    return (
+      <div className="card flex items-center gap-6 group hover:translate-y-[-2px]">
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bg} shadow-sm border border-black/[0.03] transition-colors duration-500`}>
+          <IconComponent className={color} size={26} strokeWidth={1.5} />
+        </div>
+        <div>
+          <p className="text-[11px] text-brand-charcoal/50 font-semibold uppercase tracking-widest mb-1.5">{title}</p>
+          <h3 className="text-3xl font-semibold text-brand-charcoal tracking-tight">
+            {title.includes('Collection') ? `₹${value.toLocaleString('en-IN')}` : value}
+          </h3>
+        </div>
+      </div>
+    );
   };
-
-  const StatCard = ({ title, value, icon: Icon, color, bg }) => (
-    <div className="card flex items-center gap-6 group hover:translate-y-[-2px]">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bg} shadow-sm border border-black/[0.03] transition-colors duration-500`}>
-        <Icon className={color} size={26} strokeWidth={1.5} />
-      </div>
-      <div>
-        <p className="text-[11px] text-brand-charcoal/50 font-semibold uppercase tracking-widest mb-1.5">{title}</p>
-        <h3 className="text-3xl font-semibold text-brand-charcoal tracking-tight">
-          {title.includes('Collection') ? `₹${value.toLocaleString('en-IN')}` : value}
-        </h3>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen pb-24 bg-[#fafafa]">

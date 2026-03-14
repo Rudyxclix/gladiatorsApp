@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { LogOut, BookOpen, Activity, AlertCircle } from 'lucide-react';
 
 const ExecutiveDashboard = () => {
@@ -11,55 +11,55 @@ const ExecutiveDashboard = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => {
-    fetchMyBooks();
-  }, []);
-
-  const fetchMyBooks = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      // For executive, we need to fetch all programs they are part of, or a specific program
-      // For MVP, we'll fetch the first active program and get books assigned to them.
-      const programsRes = await axios.get('http://localhost:5001/api/programs', { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      
-      const activeProgram = programsRes.data.find(p => p.status === 'Active');
-      
-      if (activeProgram) {
-        const booksRes = await axios.get(`http://localhost:5001/api/books/inventory/${activeProgram._id}`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
-        
-        setBooks(booksRes.data);
-        
-        // Calculate basic stats for this executive
-        const collected = booksRes.data.reduce((sum, b) => sum + (b.collectionAmount || 0), 0);
-        const completedCount = booksRes.data.filter(b => b.status === 'Completed').length;
-        
-        setStats({
-          totalAssigned: booksRes.data.length,
-          totalCollected: collected,
-          completed: completedCount
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      if (error.response?.status === 401) {
-        handleLogout();
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('user');
     navigate('/login');
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchMyBooks = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        // For executive, we need to fetch all programs they are part of, or a specific program
+        // For MVP, we'll fetch the first active program and get books assigned to them.
+        const programsRes = await api.get('/programs', { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        
+        const activeProgram = programsRes.data.find(p => p.status === 'Active');
+        
+        if (activeProgram) {
+          const booksRes = await api.get(`/books/inventory/${activeProgram._id}`, { 
+            headers: { Authorization: `Bearer ${token}` } 
+          });
+          
+          setBooks(booksRes.data);
+          
+          // Calculate basic stats for this executive
+          const collected = booksRes.data.reduce((sum, b) => sum + (b.collectionAmount || 0), 0);
+          const completedCount = booksRes.data.filter(b => b.status === 'Completed').length;
+          
+          setStats({
+            totalAssigned: booksRes.data.length,
+            totalCollected: collected,
+            completed: completedCount
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        if (error.response?.status === 401) {
+          handleLogout();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyBooks();
+  }, [handleLogout]);
 
   return (
     <div className="min-h-screen pb-24 bg-[#fafafa]">

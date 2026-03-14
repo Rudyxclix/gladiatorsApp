@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 
 // Pages will be imported here
 import LandingPage from './pages/LandingPage';

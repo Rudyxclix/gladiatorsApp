@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../apiClient';
 import { ArrowLeft, LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -16,7 +16,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { data } = await axios.post('http://localhost:5001/api/auth/login', {
+      const { data } = await api.post('/auth/login', {
         phone,
         password,
       });
