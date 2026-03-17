@@ -116,4 +116,222 @@ router.put('/:id', protect, treasurerOnly, async (req, res) => {
   }
 });
 
+// @desc    Add sponsor to program
+// @route   POST /api/programs/:id/sponsors
+// @access  Private (Treasurer)
+router.post('/:id/sponsors', protect, treasurerOnly, async (req, res) => {
+  try {
+    const { name, amount, date, description } = req.body;
+    const program = await Program.findById(req.params.id);
+
+    if (!name || isNaN(amount)) {
+      return res.status(400).json({ message: 'Name and a valid amount are required' });
+    }
+
+    const sponsor = {
+      name,
+      amount: Number(amount),
+      date: date ? new Date(date) : new Date(),
+      description
+    };
+
+    program.sponsors.push(sponsor);
+    program.totalSponsorship = (program.totalSponsorship || 0) + sponsor.amount;
+    console.log(`Add sponsor: ${sponsor.name}, Amount: ${sponsor.amount}, New Total: ${program.totalSponsorship}`);
+
+    const updatedProgram = await program.save();
+    res.status(201).json(updatedProgram);
+  } catch (error) {
+    console.error('Error adding sponsor:', error);
+    res.status(500).json({ message: 'Server error', details: error.message });
+  }
+});
+
+// @desc    Remove sponsor from program
+// @route   DELETE /api/programs/:id/sponsors/:sponsorId
+// @access  Private (Treasurer)
+router.delete('/:id/sponsors/:sponsorId', protect, treasurerOnly, async (req, res) => {
+  try {
+    const program = await Program.findById(req.params.id);
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    const sponsorIndex = program.sponsors.findIndex(s => s._id.toString() === req.params.sponsorId);
+    if (sponsorIndex === -1) {
+      return res.status(404).json({ message: 'Sponsor not found' });
+    }
+
+    const sponsor = program.sponsors[sponsorIndex];
+    program.totalSponsorship -= sponsor.amount;
+    program.sponsors.splice(sponsorIndex, 1);
+
+    const updatedProgram = await program.save();
+    res.json(updatedProgram);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Update sponsor in program
+// @route   PUT /api/programs/:id/sponsors/:sponsorId
+// @access  Private (Treasurer)
+router.put('/:id/sponsors/:sponsorId', protect, treasurerOnly, async (req, res) => {
+  try {
+    const { name, amount, date, description } = req.body;
+    const program = await Program.findById(req.params.id);
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    const sponsorIndex = program.sponsors.findIndex(s => s._id.toString() === req.params.sponsorId);
+    if (sponsorIndex === -1) {
+      return res.status(404).json({ message: 'Sponsor not found' });
+    }
+
+    const oldAmount = program.sponsors[sponsorIndex].amount;
+    const newAmount = Number(amount);
+
+    program.sponsors[sponsorIndex].name = name || program.sponsors[sponsorIndex].name;
+    program.sponsors[sponsorIndex].amount = newAmount;
+    program.sponsors[sponsorIndex].date = date ? new Date(date) : program.sponsors[sponsorIndex].date;
+    program.sponsors[sponsorIndex].description = description !== undefined ? description : program.sponsors[sponsorIndex].description;
+
+    program.totalSponsorship = program.totalSponsorship - oldAmount + newAmount;
+
+    const updatedProgram = await program.save();
+    res.json(updatedProgram);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Add expense to program
+// @route   POST /api/programs/:id/expenses
+// @access  Private (Treasurer)
+router.post('/:id/expenses', protect, treasurerOnly, async (req, res) => {
+  try {
+    const { description, amount, date, category } = req.body;
+    const program = await Program.findById(req.params.id);
+    if (!description || isNaN(Number(amount))) {
+      return res.status(400).json({ message: 'Description and a valid amount are required' });
+    }
+
+    const expense = {
+      description,
+      amount: Number(amount),
+      date: date ? new Date(date) : new Date(),
+      category
+    };
+
+    program.expenses.push(expense);
+    program.totalExpenses = (program.totalExpenses || 0) + expense.amount;
+    console.log(`Add expense: ${expense.description}, Amount: ${expense.amount}, New Total: ${program.totalExpenses}`);
+
+    const updatedProgram = await program.save();
+    res.status(201).json(updatedProgram);
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    res.status(500).json({ message: 'Server error', details: error.message });
+  }
+});
+
+// @desc    Remove expense from program
+// @route   DELETE /api/programs/:id/expenses/:expenseId
+// @access  Private (Treasurer)
+router.delete('/:id/expenses/:expenseId', protect, treasurerOnly, async (req, res) => {
+  try {
+    const program = await Program.findById(req.params.id);
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    const expenseIndex = program.expenses.findIndex(e => e._id.toString() === req.params.expenseId);
+    if (expenseIndex === -1) {
+      return res.status(404).json({ message: 'Expense not found' });
+    }
+
+    const expense = program.expenses[expenseIndex];
+    program.totalExpenses -= expense.amount;
+    program.expenses.splice(expenseIndex, 1);
+
+    const updatedProgram = await program.save();
+    res.json(updatedProgram);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Update expense in program
+// @route   PUT /api/programs/:id/expenses/:expenseId
+// @access  Private (Treasurer)
+router.put('/:id/expenses/:expenseId', protect, treasurerOnly, async (req, res) => {
+  try {
+    const { description, amount, date, category } = req.body;
+    const program = await Program.findById(req.params.id);
+    if (!description || isNaN(Number(amount))) {
+      return res.status(400).json({ message: 'Description and a valid amount are required' });
+    }
+
+    const expenseIndex = program.expenses.findIndex(e => e._id.toString() === req.params.expenseId);
+    if (expenseIndex === -1) {
+      return res.status(404).json({ message: 'Expense not found' });
+    }
+
+    const oldAmount = program.expenses[expenseIndex].amount;
+    const newAmount = Number(amount);
+
+    program.expenses[expenseIndex].description = description || program.expenses[expenseIndex].description;
+    program.expenses[expenseIndex].amount = newAmount;
+    program.expenses[expenseIndex].date = date ? new Date(date) : program.expenses[expenseIndex].date;
+    program.expenses[expenseIndex].category = category !== undefined ? category : program.expenses[expenseIndex].category;
+
+    program.totalExpenses = program.totalExpenses - oldAmount + newAmount;
+
+    const updatedProgram = await program.save();
+    res.json(updatedProgram);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @desc    Recalculate all program totals (Recovery/Sync)
+// @route   GET /api/programs/:id/recalculate
+// @access  Private (Treasurer)
+router.get('/:id/recalculate', protect, treasurerOnly, async (req, res) => {
+  try {
+    const programId = req.params.id;
+    const program = await Program.findById(programId);
+    if (!program) return res.status(404).json({ message: 'Program not found' });
+
+    // 1. Recalculate Book Collections
+    const books = await CouponBook.find({ program: programId });
+    const totalFromBooks = books.reduce((acc, b) => acc + (b.collectionAmount || 0), 0);
+
+    // 2. Recalculate Sponsorships from the sub-documents array in the program itself
+    const totalFromSponsors = program.sponsors.reduce((acc, s) => acc + (s.amount || 0), 0);
+
+    // 3. Recalculate Expenses
+    const totalExpenses = program.expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+
+    // Update the program document
+    program.totalMoneyCollected = totalFromBooks;
+    program.totalSponsorship = totalFromSponsors;
+    program.totalExpenses = totalExpenses;
+
+    const updatedProgram = await program.save();
+    res.json(updatedProgram);
+  } catch (error) {
+    console.error('Recalculation error:', error);
+    res.status(500).json({ message: 'Server error during recalculation' });
+  }
+});
+
 export default router;

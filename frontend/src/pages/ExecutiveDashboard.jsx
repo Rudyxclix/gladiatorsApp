@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../apiClient';
-import { LogOut, BookOpen, Activity, AlertCircle } from 'lucide-react';
+import { LogOut, BookOpen, Activity, AlertCircle, CircleDollarSign, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ExecutiveDashboard = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ totalAssigned: 0, totalCollected: 0, completed: 0 });
+  const [collectingBookId, setCollectingBookId] = useState(null);
+  const [collectAmount, setCollectAmount] = useState('');
   
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -18,36 +21,26 @@ const ExecutiveDashboard = () => {
     navigate('/login');
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchMyBooks = async () => {
-      setLoading(true);
+  const fetchMyBooks = useCallback(async (silent = false) => {
+      if (!silent) setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        // For executive, we need to fetch all programs they are part of, or a specific program
-        // For MVP, we'll fetch the first active program and get books assigned to them.
-        const programsRes = await api.get('/programs', { 
+        const booksRes = await api.get('/books/my-books', { 
           headers: { Authorization: `Bearer ${token}` } 
         });
         
-        const activeProgram = programsRes.data.find(p => p.status === 'Active');
+        const booksData = booksRes.data || [];
+        setBooks(booksData);
         
-        if (activeProgram) {
-          const booksRes = await api.get(`/books/inventory/${activeProgram._id}`, { 
-            headers: { Authorization: `Bearer ${token}` } 
-          });
-          
-          setBooks(booksRes.data);
-          
-          // Calculate basic stats for this executive
-          const collected = booksRes.data.reduce((sum, b) => sum + (b.collectionAmount || 0), 0);
-          const completedCount = booksRes.data.filter(b => b.status === 'Completed').length;
-          
-          setStats({
-            totalAssigned: booksRes.data.length,
-            totalCollected: collected,
-            completed: completedCount
-          });
-        }
+        // Calculate basic stats for this user across all programs
+        const collected = booksData.reduce((sum, b) => sum + (b.collectionAmount || 0), 0);
+        const completedCount = booksData.filter(b => b.status === 'Completed').length;
+        
+        setStats({
+          totalAssigned: booksData.length,
+          totalCollected: collected,
+          completed: completedCount
+        });
       } catch (error) {
         console.error(error);
         if (error.response?.status === 401) {
@@ -56,13 +49,38 @@ const ExecutiveDashboard = () => {
       } finally {
         setLoading(false);
       }
-    };
+    }, [handleLogout]);
 
+  const handleRecordCollection = useCallback(async (bookId, amount) => {
+    try {
+      const token = localStorage.getItem('token');
+      const programsRes = await api.get('/programs', { headers: { Authorization: `Bearer ${token}` } });
+      const activeProgram = programsRes.data.find(p => p.status === 'Active');
+      
+      if (activeProgram) {
+        await api.post('/collections', 
+          { 
+            program: activeProgram._id,
+            couponBook: bookId,
+            amount: parseFloat(amount)
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        // Refresh data silently
+        fetchMyBooks(true);
+      }
+    } catch (error) {
+      console.error('Error recording collection:', error);
+      toast.error('Failed to record collection. Please try again.');
+    }
+  }, [fetchMyBooks]);
+
+  useEffect(() => {
     fetchMyBooks();
-  }, [handleLogout]);
+  }, [fetchMyBooks]);
 
   return (
-    <div className="min-h-screen pb-24 bg-[#fafafa]">
+    <div className="min-h-screen pb-24 bg-brand-grey">
       {/* Header */}
       <header className="bg-brand-charcoal text-white rounded-b-[2.5rem] pb-12 pt-8 px-6 shadow-[0_20px_40px_rgb(0,0,0,0.1)] mb-12 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none rounded-b-[2.5rem]">
@@ -96,33 +114,33 @@ const ExecutiveDashboard = () => {
       <main className="max-w-4xl mx-auto px-6">
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
-          <div className="card bg-white border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 hover:translate-y-[-2px] transition-transform duration-500">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 border border-blue-100/50">
+          <div className="card bg-brand-card-bg border-0 shadow-[0_8px_30px_rgb(0,0,0,0.3)] p-6 md:p-8 hover:translate-y-[-2px] transition-transform duration-500">
+            <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mb-6 border border-blue-500/30">
               <BookOpen size={20} strokeWidth={1.5} />
             </div>
-            <p className="text-[10px] text-brand-charcoal/50 font-semibold uppercase tracking-widest mb-1.5">Assigned</p>
-            <h3 className="text-3xl font-semibold tracking-tight">{stats.totalAssigned} Books</h3>
+            <p className="text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1.5">Assigned</p>
+            <h3 className="text-3xl font-semibold tracking-tight text-white">{stats.totalAssigned} Books</h3>
           </div>
-          <div className="card bg-white border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 relative overflow-hidden group hover:translate-y-[-2px] transition-transform duration-500">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-50 rounded-bl-full -mr-10 -mt-10 -z-0 transition-transform duration-700 group-hover:scale-125" />
+          <div className="card bg-brand-card-bg border-0 shadow-[0_8px_30px_rgb(0,0,0,0.3)] p-6 md:p-8 relative overflow-hidden group hover:translate-y-[-2px] transition-transform duration-500">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-bl-full -mr-10 -mt-10 -z-0 transition-transform duration-700 group-hover:scale-125" />
             <div className="relative z-10">
-              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 border border-emerald-200/50">
+              <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/30">
                 <span className="font-semibold text-lg">₹</span>
               </div>
-              <p className="text-[10px] text-brand-charcoal/50 font-semibold uppercase tracking-widest mb-1.5">Collected</p>
-              <h3 className="text-4xl font-semibold text-emerald-600 tracking-tight">₹{stats.totalCollected.toLocaleString('en-IN')}</h3>
+              <p className="text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1.5">Collected</p>
+              <h3 className="text-4xl font-semibold text-emerald-400 tracking-tight">₹{stats.totalCollected.toLocaleString('en-IN')}</h3>
             </div>
           </div>
           
-          <div className="card bg-white border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 col-span-2 md:col-span-1 hover:translate-y-[-2px] transition-transform duration-500">
-             <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 border border-purple-100/50">
+          <div className="card bg-brand-card-bg border-0 shadow-[0_8px_30px_rgb(0,0,0,0.3)] p-6 md:p-8 col-span-2 md:col-span-1 hover:translate-y-[-2px] transition-transform duration-500">
+             <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/30">
               <Activity size={20} strokeWidth={1.5} />
             </div>
-            <p className="text-[10px] text-brand-charcoal/50 font-semibold uppercase tracking-widest mb-1.5">Completed</p>
-            <h3 className="text-3xl font-semibold tracking-tight">{stats.completed} / {stats.totalAssigned}</h3>
+            <p className="text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1.5">Completed</p>
+            <h3 className="text-3xl font-semibold tracking-tight text-white">{stats.completed} / {stats.totalAssigned}</h3>
             
             {stats.totalAssigned > 0 && (
-              <div className="w-full bg-[#fafafa] border border-black/[0.03] rounded-full h-2 mt-6 overflow-hidden">
+              <div className="w-full bg-brand-dark-bg border border-brand-border/50 rounded-full h-2 mt-6 overflow-hidden">
                 <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${(stats.completed / stats.totalAssigned) * 100}%` }}></div>
               </div>
             )}
@@ -130,52 +148,111 @@ const ExecutiveDashboard = () => {
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold tracking-tight">Your Active Books</h2>
-          <p className="text-brand-charcoal/60 mt-1 font-light text-sm">Coupon books currently assigned to you.</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-white">Your Active Books</h2>
+          <p className="text-white/60 mt-1 font-light text-sm">Coupon books currently assigned to you.</p>
         </div>
 
         {loading ? (
           <div className="space-y-4 animate-pulse">
-            {[1, 2, 3].map(i => <div key={i} className="h-28 bg-white border border-black/[0.03] rounded-[1.5rem] w-full"></div>)}
+            {[1, 2, 3].map(i => <div key={i} className="h-28 bg-brand-card-bg border border-brand-border/30 rounded-[1.5rem] w-full"></div>)}
           </div>
         ) : books.length === 0 ? (
-          <div className="text-center py-20 px-6 card border-dashed border-black/10 bg-[#fafafa]">
-            <AlertCircle className="mx-auto text-brand-charcoal/20 mb-4" size={48} strokeWidth={1.5} />
-            <p className="text-xl text-brand-charcoal font-semibold tracking-tight">No books assigned yet</p>
-            <p className="text-brand-charcoal/50 mt-2 font-light max-w-sm mx-auto">Contact the Treasurer to receive your coupon books.</p>
+          <div className="text-center py-20 px-6 card border-dashed border-brand-border/50 bg-brand-dark-bg">
+            <AlertCircle className="mx-auto text-white/20 mb-4" size={48} strokeWidth={1.5} />
+            <p className="text-xl text-white font-semibold tracking-tight">No books assigned yet</p>
+            <p className="text-white/50 mt-2 font-light max-w-sm mx-auto">Contact the Treasurer to receive your coupon books.</p>
           </div>
         ) : (
           <div className="grid gap-5">
             {books.map(book => (
-              <div key={book._id} className="card p-6 border-0 shadow-[0_4px_20px_rgb(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:translate-y-0">
+              <div key={book._id} className="card p-6 border-0 shadow-[0_4px_20px_rgb(0,0,0,0.3)] flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:translate-y-0">
                 <div className="flex items-start gap-5">
                   <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shrink-0 font-mono font-medium text-sm border
-                    ${book.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50 shadow-inner' 
-                    : book.status === 'Returned' ? 'bg-orange-50 text-orange-600 border-orange-100/50 shadow-inner'
-                    : 'bg-blue-50 text-blue-600 border-blue-100/50 shadow-inner'}
+                    ${book.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-inner' 
+                    : book.status === 'Partial' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-inner'
+                    : book.status === 'Returned' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 shadow-inner'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-inner'}
                   `}>
                     #{book.bookNumber}
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-lg tracking-tight text-brand-charcoal mb-1">{book.bookType?.name ?? 'Book'}</h4>
-                    <p className="text-xs text-brand-charcoal/50 font-medium">ISSUED: {new Date(book.issueDate).toLocaleDateString()}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-lg tracking-tight text-white m-0">{book.bookType?.name ?? 'Book'}</h4>
+                      {book.program && (
+                         <span className="px-2 py-0.5 bg-brand-orange/10 text-brand-orange text-[9px] font-bold uppercase tracking-wider rounded border border-brand-orange/20">
+                           {book.program.name}
+                         </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-white/50 font-medium">ISSUED: {new Date(book.issueDate).toLocaleDateString()}</p>
                     
                     <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-wider
-                      bg-[#fafafa] text-brand-charcoal/50 border border-black/5"
+                      bg-brand-dark-bg text-white/50 border border-brand-border/50"
                     >
                       Status: <span className={
-                        book.status === 'Completed' ? 'text-emerald-600' :
-                        book.status === 'Returned' ? 'text-orange-600' : 'text-blue-600'
+                        book.status === 'Completed' ? 'text-emerald-400' :
+                        book.status === 'Partial' ? 'text-yellow-400' :
+                        book.status === 'Returned' ? 'text-orange-400' : 'text-blue-400'
                       }>{book.status}</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-[#fafafa] rounded-[1.25rem] p-4 text-center sm:text-right border border-black/[0.03]">
-                  <p className="text-[10px] text-brand-charcoal/40 font-semibold uppercase tracking-widest mb-1.5">Collection</p>
-                  <p className="font-mono font-semibold text-xl text-emerald-600 tracking-tight">
-                    {book.collectionAmount > 0 ? `₹${book.collectionAmount.toLocaleString('en-IN')}` : '₹0'}
-                  </p>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="bg-brand-dark-bg rounded-[1.25rem] p-4 text-center border border-brand-border/50">
+                    <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest mb-1.5">Collection</p>
+                    <p className="font-mono font-semibold text-xl text-emerald-400 tracking-tight">
+                      {book.collectionAmount > 0 ? `₹${book.collectionAmount.toLocaleString('en-IN')}` : '₹0'}
+                    </p>
+                  </div>
+                  
+                  {user.role === 'Treasurer' && book.status !== 'Completed' && (
+                    <div className="flex flex-col items-center gap-2">
+                      {collectingBookId === book._id ? (
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="number"
+                            placeholder="Amount"
+                            className="input-field w-24 text-center"
+                            value={collectAmount}
+                            onChange={(e) => setCollectAmount(e.target.value)}
+                            min="1"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                if (collectAmount) {
+                                  handleRecordCollection(book._id, collectAmount);
+                                  setCollectingBookId(null);
+                                  setCollectAmount('');
+                                }
+                              }}
+                              className="btn-primary py-1 px-3 text-xs"
+                            >
+                              Record
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCollectingBookId(null);
+                                setCollectAmount('');
+                              }}
+                              className="btn-secondary py-1 px-3 text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setCollectingBookId(book._id)}
+                          className="btn-secondary py-2 px-4 text-sm flex items-center gap-2"
+                        >
+                          <CircleDollarSign size={16} />
+                          Record Collection
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

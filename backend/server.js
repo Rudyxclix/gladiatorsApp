@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/auth.js';
 import programRoutes from './routes/programs.js';
@@ -16,12 +18,20 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: true,
   credentials: true
 }));
-app.options('*', cors()); // Handle preflight requests
 app.use(express.json());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api/', limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

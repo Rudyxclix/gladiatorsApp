@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../apiClient';
 import { ArrowLeft, Plus, Calendar, Settings, Edit3, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ProgramManagement = () => {
   const [programs, setPrograms] = useState([]);
@@ -22,7 +23,8 @@ const ProgramManagement = () => {
     fetchPrograms();
   }, []);
 
-  const fetchPrograms = async () => {
+  const fetchPrograms = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const token = localStorage.getItem('token');
         const { data } = await api.get('/programs', {
@@ -32,7 +34,7 @@ const ProgramManagement = () => {
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -54,9 +56,10 @@ const ProgramManagement = () => {
         setPrograms([data, ...programs]);
       }
       handleCancelForm();
+      toast.success(editingId ? 'Program updated' : 'Program created');
     } catch (error) {
       console.error(error);
-      alert(editingId ? 'Failed to update program' : 'Failed to create program');
+      toast.error(editingId ? 'Failed to update program' : 'Failed to create program');
     }
   };
 
@@ -68,10 +71,11 @@ const ProgramManagement = () => {
       await api.delete(`/programs/${program._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchPrograms();
+      toast.success('Program deleted');
+      fetchPrograms(false);
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.message || 'Failed to delete program');
+      toast.error(error.response?.data?.message || 'Failed to delete program');
     }
   };
 
@@ -100,18 +104,19 @@ const ProgramManagement = () => {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` }}
       );
-      fetchPrograms();
+      toast.success(`Program marked as ${newStatus}`);
+      fetchPrograms(false);
     } catch (error) {
       console.error(error);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-[#fafafa]">
-      <header className="bg-white/80 backdrop-blur-xl border-b border-black/[0.05] sticky top-0 z-50 px-6 h-[4.5rem] flex items-center justify-between">
+    <div className="min-h-screen pb-24 bg-brand-grey">
+      <header className="bg-brand-card-bg/80 backdrop-blur-xl border-b border-brand-border/20 sticky top-0 z-50 px-6 h-[4.5rem] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 hover:bg-black/5 rounded-full text-brand-charcoal transition-colors">
+          <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 hover:bg-white/10 rounded-full text-white/70 transition-colors">
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <h1 className="text-lg font-semibold tracking-tight m-0">Programs</h1>
@@ -127,16 +132,16 @@ const ProgramManagement = () => {
       <main className="max-w-4xl mx-auto px-6 py-12">
         {showForm && (
           <div className="card mb-12 overflow-hidden transform transition-all border-brand-charcoal/[0.08] shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
-            <div className="border-b border-black/[0.05] pb-6 mb-8">
+            <div className="border-b border-brand-border/20 pb-6 mb-8">
               <h2 className="text-2xl font-semibold tracking-tight">{editingId ? 'Edit Program Details' : 'Create New Program'}</h2>
-              <p className="text-brand-charcoal/60 mt-1 font-light flex items-center gap-2">
+              <p className="text-white/60 mt-1 font-light flex items-center gap-2">
                 <Calendar size={14} /> {editingId ? 'Update the details for this fundraising event.' : 'Define a new fundraising event to associate coupon books.'}
               </p>
             </div>
             
             <form onSubmit={handleCreateOrUpdate} className="space-y-6">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-brand-charcoal/60">Program Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">Program Name</label>
                 <input
                   type="text"
                   required
@@ -148,7 +153,7 @@ const ProgramManagement = () => {
               </div>
               
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-brand-charcoal/60">Description (Optional)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">Description (Optional)</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -158,7 +163,7 @@ const ProgramManagement = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-brand-charcoal/60">Target Date</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">Target Date</label>
                 <input
                   type="date"
                   required
@@ -181,15 +186,15 @@ const ProgramManagement = () => {
         <div className="space-y-4">
           {loading ? (
             <div className="animate-pulse space-y-4">
-              {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white rounded-[1.5rem] border border-black/[0.03]"></div>)}
+              {[1, 2, 3].map(i => <div key={i} className="h-24 bg-brand-card-bg rounded-[1.5rem] border border-brand-border/40"></div>)}
             </div>
           ) : programs.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-[2rem] border border-dashed border-black/10">
-              <div className="w-20 h-20 bg-[#fafafa] rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
-                <Calendar className="text-brand-charcoal/20" size={32} strokeWidth={1.5} />
+            <div className="text-center py-24 bg-brand-card-bg rounded-[2rem] border border-dashed border-brand-border/30">
+              <div className="w-20 h-20 bg-brand-card-bg/50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
+                <Calendar className="text-white/30" size={32} strokeWidth={1.5} />
               </div>
-              <h3 className="text-2xl font-semibold tracking-tight text-brand-charcoal">No Programs Yet</h3>
-              <p className="text-lg text-brand-charcoal/50 mt-2 mb-8 font-light max-w-sm mx-auto">Create your first fundraising program to get started.</p>
+              <h3 className="text-2xl font-semibold tracking-tight text-white">No Programs Yet</h3>
+              <p className="text-lg text-white/60 mt-2 mb-8 font-light max-w-sm mx-auto">Create your first fundraising program to get started.</p>
               <button onClick={() => setShowForm(true)} className="btn-secondary rounded-full">
                 Create Program
               </button>
@@ -203,14 +208,14 @@ const ProgramManagement = () => {
                       <h3 className="text-xl font-semibold tracking-tight">{program.name}</h3>
                       <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-semibold ${
                         program.status === 'Active' 
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                        : 'bg-[#fafafa] text-brand-charcoal/50 border border-black/5'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : 'bg-white/5 text-white/40 border border-white/10'
                       }`}>
                         {program.status}
                       </span>
                     </div>
-                    <p className="text-brand-charcoal/60 mb-3 font-light leading-relaxed max-w-xl">{program.description || 'No description provided.'}</p>
-                    <p className="text-xs text-brand-charcoal/40 font-medium flex items-center gap-1.5 uppercase tracking-wider">
+                    <p className="text-white/60 mb-3 font-light leading-relaxed max-w-xl">{program.description || 'No description provided.'}</p>
+                    <p className="text-xs text-white/40 font-medium flex items-center gap-1.5 uppercase tracking-wider">
                       <Calendar size={14} strokeWidth={1.5} /> 
                       {new Date(program.date).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
                     </p>
@@ -219,14 +224,14 @@ const ProgramManagement = () => {
                   <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0">
                     <button 
                       onClick={() => handleEditClick(program)}
-                      className="btn-secondary py-2 px-4 shadow-none text-sm flex items-center justify-center gap-2 rounded-xl group-hover:border-black/10 transition-colors w-full sm:w-auto"
+                      className="btn-secondary py-2 px-4 shadow-none text-sm flex items-center justify-center gap-2 rounded-xl group-hover:border-white/10 transition-colors w-full sm:w-auto"
                     >
                       <Edit3 size={16} strokeWidth={1.5} /> 
                       <span className="hidden sm:inline">Edit</span>
                     </button>
                     <button 
                       onClick={() => updateStatus(program._id, program.status)}
-                      className="btn-secondary py-2 px-4 shadow-none text-sm flex items-center justify-center gap-2 rounded-xl group-hover:border-black/10 transition-colors w-full sm:w-auto"
+                      className="btn-secondary py-2 px-4 shadow-none text-sm flex items-center justify-center gap-2 rounded-xl group-hover:border-white/10 transition-colors w-full sm:w-auto"
                     >
                       <Settings size={16} strokeWidth={1.5} /> 
                       <span className="hidden sm:inline">Status</span>

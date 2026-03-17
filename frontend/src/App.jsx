@@ -1,13 +1,15 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
-// Pages will be imported here
-import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import ExecutiveDashboard from './pages/ExecutiveDashboard';
-import ProgramManagement from './pages/ProgramManagement';
-import BookInventory from './pages/BookInventory';
-import MemberManagement from './pages/MemberManagement';
+// Lazy load pages to reduce initial bundle size
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
+const ProgramManagement = lazy(() => import('./pages/ProgramManagement'));
+const BookInventory = lazy(() => import('./pages/BookInventory'));
+const MemberManagement = lazy(() => import('./pages/MemberManagement'));
 
 // Protect routes based on authentication and role
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -25,11 +27,29 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// Fallback loader
+const FallbackLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-brand-grey">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange"></div>
+  </div>
+);
+
 function App() {
   return (
     <Router>
-      <div className="font-sans antialiased text-brand-charcoal bg-brand-grey min-h-screen selection:bg-brand-orange/30">
-        <Routes>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#1a1a1a',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)'
+          },
+        }}
+      />
+      <div className="font-sans antialiased text-white bg-brand-grey min-h-screen selection:bg-brand-orange/30">
+        <Suspense fallback={<FallbackLoader />}>
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
@@ -75,11 +95,12 @@ function App() {
               <ProtectedRoute allowedRoles={['Executive', 'Treasurer', 'Member']}>
                 <ExecutiveDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
-      </div>
-    </Router>
+      </Suspense>
+    </div>
+  </Router>
   );
 }
 

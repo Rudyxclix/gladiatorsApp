@@ -1,16 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-charcoal: #1f2937; /* deep charcoal */
-  --color-brand-orange: #f97316; /* warm orange / sports accent */
-  --color-brand-grey: #f3f4f6; /* soft grey */
-  --color-brand-white: #ffffff; /* white */
+  --color-brand-charcoal: #1f2937; /* deep charcoal - keep for text */
+  --color-brand-orange: #f97316; /* warm orange / sports accent - keep */
+  --color-brand-grey: #111827; /* dark grey background */
+  --color-brand-white: #ffffff; /* white - keep for text on dark */
+  --color-brand-dark-bg: #0f172a; /* very dark background */
+  --color-brand-card-bg: #1e293b; /* card background */
+  --color-brand-border: #374151; /* border color */
 
   /* Additional shades for depth */
-  --color-brand-charcoal-light: #374151;
+  --color-brand-charcoal-light: #6b7280;
   --color-brand-orange-light: #fb923c;
   --color-brand-orange-dark: #ea580c;
-  --color-brand-grey-dark: #e5e7eb;
+  --color-brand-grey-dark: #374151;
 
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-heading: 'Outfit', system-ui, sans-serif;
@@ -18,29 +21,29 @@
 
 @layer base {
   body {
-    @apply bg-brand-grey text-brand-charcoal font-sans antialiased min-h-screen;
+    @apply bg-brand-grey text-white font-sans antialiased min-h-screen;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold text-brand-charcoal;
+    @apply font-heading font-semibold text-white;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-charcoal text-white px-8 py-3.5 rounded-2xl font-medium shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-charcoal/50 focus:ring-offset-2 transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
+    @apply bg-brand-orange text-white px-8 py-3.5 rounded-2xl font-medium shadow-[0_8px_30px_rgb(249,115,22,0.3)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:ring-offset-2 focus:ring-offset-brand-grey transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply bg-white/80 backdrop-blur-md text-brand-charcoal border border-brand-charcoal/10 px-8 py-3.5 rounded-2xl font-medium shadow-[0_2px_10px_rgb(0,0,0,0.04)] hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-charcoal/30 focus:ring-offset-2 transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
+    @apply bg-brand-card-bg/80 backdrop-blur-md text-white border border-brand-border px-8 py-3.5 rounded-2xl font-medium shadow-[0_2px_10px_rgb(0,0,0,0.2)] hover:bg-brand-card-bg hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:ring-offset-2 focus:ring-offset-brand-grey transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
   }
   
   .card {
-    @apply bg-white rounded-[1.5rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-brand-charcoal/[0.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500;
+    @apply bg-brand-card-bg rounded-[1.5rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-brand-border/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all duration-500;
   }
 
   .input-field {
-    @apply w-full px-5 py-4 rounded-2xl border border-brand-charcoal/10 bg-brand-charcoal/[0.02] focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-transparent focus:bg-white transition-all duration-300;
+    @apply w-full px-5 py-4 rounded-2xl border border-brand-border bg-brand-card-bg/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-transparent focus:bg-brand-card-bg transition-all duration-300 text-white placeholder:text-gray-400;
   }
 }
 

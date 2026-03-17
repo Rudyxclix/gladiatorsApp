@@ -42,10 +42,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative bg-[#fafafa]">
+    <div className="min-h-screen flex items-center justify-center p-6 relative bg-brand-grey">
       <button 
         onClick={() => navigate('/')}
-        className="absolute top-8 left-8 p-3 rounded-full hover:bg-black/5 transition-colors text-brand-charcoal"
+        className="absolute top-8 left-8 p-3 rounded-full hover:bg-brand-border/50 transition-colors text-white"
         aria-label="Back to home"
       >
         <ArrowLeft size={24} strokeWidth={1.5} />
@@ -56,8 +56,8 @@ const Login = () => {
           <div className="w-16 h-16 bg-brand-charcoal text-white rounded-[1.25rem] flex items-center justify-center mx-auto mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
             <LogIn size={28} strokeWidth={1.5} />
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight">Access Portal</h2>
-          <p className="text-brand-charcoal/60 mt-2 font-light text-sm">Sign in to your Gladiators account</p>
+          <h2 className="text-3xl font-semibold tracking-tight text-white">Access Portal</h2>
+          <p className="text-white/60 mt-2 font-light text-sm">Sign in to your Gladiators account</p>
         </div>
 
         {error && (
@@ -68,7 +68,7 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-brand-charcoal/60">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">
               Phone Number
             </label>
             <input
@@ -82,7 +82,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-brand-charcoal/60">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">
               Password
             </label>
             <input

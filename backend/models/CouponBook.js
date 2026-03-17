@@ -56,7 +56,7 @@ const couponBookSchema = new mongoose.Schema({
   }],
   status: {
     type: String,
-    enum: ['Available', 'Assigned', 'Returned', 'Completed'],
+    enum: ['Available', 'In Progress', 'Partial', 'Returned', 'Completed'],
     default: 'Available',
   },
   issueDate: {
@@ -68,10 +68,18 @@ const couponBookSchema = new mongoose.Schema({
   collectionAmount: {
     type: Number,
     default: 0,
+  },
+  expectedAmount: {
+    type: Number,
+    default: 0,
   }
 }, { timestamps: true });
 
 // Compound index to ensure book numbers are unique per program
 couponBookSchema.index({ program: 1, bookNumber: 1 }, { unique: true });
+
+// Performance indexes
+couponBookSchema.index({ program: 1, status: 1 });
+couponBookSchema.index({ assignedTo: 1 });
 
 export const CouponBook = mongoose.model('CouponBook', couponBookSchema);

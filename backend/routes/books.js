@@ -5,6 +5,25 @@ import { protect, treasurerOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// @desc    Get all books assigned to current user (Member/Executive) Across all programs
+// @route   GET /api/books/my-books
+// @access  Private
+router.get('/my-books', protect, async (req, res) => {
+  try {
+    const books = await CouponBook.find({ 
+      assignedTo: { $in: [req.user._id] } 
+    })
+    .populate('program', 'name status')
+    .populate('bookType', 'name fixedAmount amountType leavesPerBook')
+    .sort('-updatedAt');
+    
+    res.json(books);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 /** Normalize program ID for consistent comparison (ObjectId or string → string). */
 function toProgramId(val) {
   if (val == null) return null;
@@ -155,11 +174,13 @@ router.post('/inventory', protect, treasurerOnly, async (req, res) => {
 
     const books = [];
     for (let i = 0; i < count; i++) {
+      const expectedAmount = typeDoc.amountType === 'Fixed' ? typeDoc.fixedAmount * typeDoc.leavesPerBook : 0;
       books.push({
         program,
         bookType,
         bookNumber: `${startNumber + i}`,
-        status: 'Available'
+        status: 'Available',
+        expectedAmount
       });
     }
 
@@ -223,6 +244,7 @@ router.put('/inventory/:id/book-type', protect, treasurerOnly, async (req, res) 
       return res.status(400).json({ message: 'Book type must belong to the same program as the book' });
     }
     book.bookType = newTypeId;
+    book.expectedAmount = typeDoc.amountType === 'Fixed' ? typeDoc.fixedAmount * typeDoc.leavesPerBook : 0;
     const updatedBook = await book.save();
     const populated = await CouponBook.findById(updatedBook._id)
       .populate('bookType', 'program name leavesPerBook amountType fixedAmount')
@@ -321,37 +343,41 @@ router.post('/inventory/bulk-delete', protect, treasurerOnly, async (req, res) =
   }
 });
 
-// @desc    Get inventory (books) for a program. Auto-fixes mismatched types when treasurer fetches so response always has correct types.
+// @desc    Get inventory (books) for a program. Note: Pagination added for performance.
 // @route   GET /api/books/inventory/:programId
 // @access  Private
 router.get('/inventory/:programId', protect, async (req, res) => {
   try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const skip = (page - 1) * limit;
+
     let filter = { program: req.params.programId };
     if (req.user.role === 'Executive' || req.user.role === 'Member') {
-      filter.assignedTo = req.user._id;
+      // Explicitly check if the user's ID exists anywhere in the assignedTo array
+      filter.assignedTo = { $in: [req.user._id] };
     }
+
+    const totalBooks = await CouponBook.countDocuments(filter);
 
     let books = await CouponBook.find(filter)
       .populate('bookType', 'program name leavesPerBook amountType fixedAmount')
       .populate('assignedTo', 'name phone')
       .collation({ locale: 'en_US', numericOrdering: true })
-      .sort('bookNumber');
+      .sort('bookNumber')
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Return plain JS objects to save memory
 
     const programIdStr = toProgramId(req.params.programId) || String(req.params.programId);
     let normalized = books.map((b) => normalizeBookTypeToProgram(b, programIdStr));
 
-    // Auto-fix: when treasurer fetches and any book has wrong-program type, fix in DB and re-fetch so response has correct types
-    if (req.user.role === 'Treasurer' && normalized.some((b) => b.typeMismatch)) {
-      await applyFixMismatchedTypesForProgram(req.params.programId);
-      books = await CouponBook.find(filter)
-        .populate('bookType', 'program name leavesPerBook amountType fixedAmount')
-        .populate('assignedTo', 'name phone')
-        .collation({ locale: 'en_US', numericOrdering: true })
-        .sort('bookNumber');
-      normalized = books.map((b) => normalizeBookTypeToProgram(b, programIdStr));
-    }
-
-    res.json(normalized);
+    res.json({
+      books: normalized,
+      totalCount: totalBooks,
+      totalPages: Math.ceil(totalBooks / limit),
+      currentPage: page
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -380,7 +406,7 @@ router.put('/:id/assign', protect, treasurerOnly, async (req, res) => {
     }
 
     book.assignedTo = ids;
-    book.status = 'Assigned';
+    book.status = 'In Progress';
     book.issueDate = Date.now();
     const updatedBook = await book.save();
     res.json(updatedBook);
@@ -441,15 +467,18 @@ router.put('/inventory/:id/assignment/edit', protect, treasurerOnly, async (req,
     const ids = assignedTo != null ? (Array.isArray(assignedTo) ? assignedTo : [assignedTo]) : undefined;
     if (ids !== undefined) book.assignedTo = ids;
 
+    let amountDiff = 0;
     if (collectionAmount !== undefined) {
       const typeSameProgram = book.bookType && toProgramId(book.bookType.program) === toProgramId(book.program);
+      const newAmount = parseFloat(collectionAmount);
       if (typeSameProgram && book.bookType.amountType === 'Fixed') {
         const maxPossible = book.bookType.fixedAmount * book.bookType.leavesPerBook;
-        if (collectionAmount > maxPossible) {
+        if (newAmount > maxPossible) {
           return res.status(400).json({ message: `Cannot exceed maximum book value of ₹${maxPossible}` });
         }
       }
-      book.collectionAmount = collectionAmount;
+      amountDiff = newAmount - book.collectionAmount;
+      book.collectionAmount = newAmount;
     }
 
     if (status !== undefined) book.status = status;
@@ -458,6 +487,13 @@ router.put('/inventory/:id/assignment/edit', protect, treasurerOnly, async (req,
     }
 
     const updatedBook = await book.save();
+    
+    // Update program total if collection amount changed
+    if (amountDiff !== 0) {
+      await mongoose.model('Program').findByIdAndUpdate(programId, { 
+        $inc: { totalMoneyCollected: amountDiff } 
+      });
+    }
     res.json(updatedBook);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

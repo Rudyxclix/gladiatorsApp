@@ -31,4 +31,6 @@ const collectionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+collectionSchema.index({ program: 1, date: -1 });
+
 export default mongoose.model('Collection', collectionSchema);

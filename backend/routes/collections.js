@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Collection from '../models/Collection.js';
 import { CouponBook } from '../models/CouponBook.js';
+import Program from '../models/Program.js';
 import { protect, treasurerOnly } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -51,15 +52,20 @@ router.post('/', protect, async (req, res) => {
     // Update the book's total collection amount
     book.collectionAmount += amount;
     
-    // Update status if needed
-    if (markCompleted) {
+    // Update status based on expected amount
+    if (book.expectedAmount > 0 && book.collectionAmount >= book.expectedAmount) {
       book.status = 'Completed';
       book.returnDate = Date.now();
-    } else if (book.status === 'Assigned') {
-      book.status = 'Returned'; // First return, pending completion
+    } else if (book.collectionAmount > 0) {
+      book.status = 'Partial';
+    } else {
+      book.status = 'In Progress';
     }
 
     await book.save();
+
+    // Update program's total money collected
+    await Program.findByIdAndUpdate(program, { $inc: { totalMoneyCollected: amount } });
 
     res.status(201).json(savedCollection);
   } catch (error) {
@@ -75,7 +81,8 @@ router.get('/program/:programId', protect, treasurerOnly, async (req, res) => {
     const collections = await Collection.find({ program: req.params.programId })
       .populate('collectedBy', 'name phone')
       .populate('couponBook', 'bookNumber')
-      .sort('-date');
+      .sort('-date')
+      .lean();
       
     // Calculate totals
     const totalAmount = collections.reduce((acc, curr) => acc + curr.amount, 0);
@@ -102,16 +109,21 @@ router.delete('/:id', protect, treasurerOnly, async (req, res) => {
       // Revert the amount
       book.collectionAmount -= collection.amount;
       
-      // If no money collected anymore, revert status back to 'Assigned'
+      // Update status based on new amount
       if (book.collectionAmount <= 0) {
         book.collectionAmount = 0;
-        book.status = 'Assigned';
+        book.status = 'In Progress';
         book.returnDate = undefined;
+      } else if (book.expectedAmount > 0 && book.collectionAmount >= book.expectedAmount) {
+        book.status = 'Completed';
       } else {
-        book.status = 'Returned'; // It still has some collection logic left
+        book.status = 'Partial';
       }
       await book.save();
     }
+
+    // Update program's total money collected
+    await Program.findByIdAndUpdate(collection.program, { $inc: { totalMoneyCollected: -collection.amount } });
 
     await collection.deleteOne();
     res.json({ message: 'Collection record reverted.' });
@@ -126,14 +138,22 @@ router.delete('/:id', protect, treasurerOnly, async (req, res) => {
 router.get('/stats', protect, treasurerOnly, async (req, res) => {
   try {
     // Basic stats for the dashboard
-    const programsCount = await mongoose.model('Program').countDocuments();
+    const programs = await mongoose.model('Program').find({});
+    const programsCount = programs.length;
     const membersCount = await mongoose.model('User').countDocuments();
     
-    const books = await CouponBook.find({});
-    const booksIssued = books.filter(b => b.status === 'Assigned' || b.status === 'Returned' || b.status === 'Completed').length;
-    const booksReturned = books.filter(b => b.status === 'Returned' || b.status === 'Completed').length;
+    const booksCount = await CouponBook.countDocuments({});
+    const booksIssued = await CouponBook.countDocuments({ status: { $in: ['In Progress', 'Partial', 'Returned', 'Completed'] } });
+    const booksReturned = await CouponBook.countDocuments({ status: { $in: ['Returned', 'Completed'] } });
     
-    const totalCollection = books.reduce((acc, curr) => acc + (curr.collectionAmount || 0), 0);
+    // Total collection = Book Income + Sponsorships across all programs
+    const aggregateTotals = programs.reduce((acc, p) => {
+      acc.totalMoneyCollected += (p.totalMoneyCollected || 0);
+      acc.totalSponsorship += (p.totalSponsorship || 0);
+      return acc;
+    }, { totalMoneyCollected: 0, totalSponsorship: 0 });
+
+    const totalCollection = aggregateTotals.totalMoneyCollected + aggregateTotals.totalSponsorship;
     
     res.json({
       totalPrograms: programsCount,
