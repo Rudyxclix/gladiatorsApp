@@ -66,7 +66,7 @@ function App() {
           <Route 
             path="/programs" 
             element={
-              <ProtectedRoute allowedRoles={['Treasurer']}>
+              <ProtectedRoute allowedRoles={['Treasurer', 'Executive']}>
                 <ProgramManagement />
               </ProtectedRoute>
             } 
@@ -74,7 +74,7 @@ function App() {
           <Route 
             path="/inventory" 
             element={
-              <ProtectedRoute allowedRoles={['Treasurer']}>
+              <ProtectedRoute allowedRoles={['Treasurer', 'Executive']}>
                 <BookInventory />
               </ProtectedRoute>
             } 

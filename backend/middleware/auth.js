@@ -32,3 +32,11 @@ export const treasurerOnly = (req, res, next) => {
     res.status(403).json({ message: 'Not authorized as a Treasurer' });
   }
 };
+
+export const treasurerOrExecutive = (req, res, next) => {
+  if (req.user && (req.user.role === 'Treasurer' || req.user.role === 'Executive')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized' });
+  }
+};

@@ -1,6 +1,6 @@
 import express from 'express';
 import Program from '../models/Program.js';
-import { protect, treasurerOnly } from '../middleware/auth.js';
+import { protect, treasurerOnly, treasurerOrExecutive } from '../middleware/auth.js';
 import mongoose from 'mongoose';
 import { CouponBook } from '../models/CouponBook.js';
 
@@ -305,7 +305,7 @@ router.put('/:id/expenses/:expenseId', protect, treasurerOnly, async (req, res) 
 // @desc    Recalculate all program totals (Recovery/Sync)
 // @route   GET /api/programs/:id/recalculate
 // @access  Private (Treasurer)
-router.get('/:id/recalculate', protect, treasurerOnly, async (req, res) => {
+router.get('/:id/recalculate', protect, treasurerOrExecutive, async (req, res) => {
   try {
     const programId = req.params.id;
     const program = await Program.findById(programId);

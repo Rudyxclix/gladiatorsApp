@@ -18,6 +18,8 @@ const ProgramManagement = () => {
   });
 
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('role');
+  const isReadOnly = userRole === 'Executive';
 
   useEffect(() => {
     fetchPrograms();
@@ -116,17 +118,19 @@ const ProgramManagement = () => {
     <div className="min-h-screen pb-24 bg-brand-grey">
       <header className="bg-brand-card-bg/80 backdrop-blur-xl border-b border-brand-border/20 sticky top-0 z-50 px-4 sm:px-6 h-14 sm:h-[4.5rem] flex items-center justify-between">
         <div className="flex items-center gap-3 sm:gap-4">
-          <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 hover:bg-white/10 rounded-full text-white/70 transition-colors">
+          <button onClick={() => navigate(isReadOnly ? '/portal' : '/dashboard')} className="p-2 -ml-2 hover:bg-white/10 rounded-full text-white/70 transition-colors">
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <h1 className="text-base sm:text-lg font-semibold tracking-tight m-0">Programs</h1>
         </div>
-        <button 
-          onClick={showForm ? handleCancelForm : () => setShowForm(true)}
-          className="btn-primary py-2 px-4 sm:px-5 shadow-none flex items-center gap-1.5 sm:gap-2 text-sm rounded-full"
-        >
-          {showForm ? 'Cancel' : <><Plus size={16} strokeWidth={2} /> <span className="hidden sm:inline">New</span> Program</>}
-        </button>
+        {!isReadOnly && (
+          <button 
+            onClick={showForm ? handleCancelForm : () => setShowForm(true)}
+            className="btn-primary py-2 px-4 sm:px-5 shadow-none flex items-center gap-1.5 sm:gap-2 text-sm rounded-full"
+          >
+            {showForm ? 'Cancel' : <><Plus size={16} strokeWidth={2} /> <span className="hidden sm:inline">New</span> Program</>}
+          </button>
+        )}
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
@@ -221,28 +225,30 @@ const ProgramManagement = () => {
                     </p>
                   </div>
                   
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button 
-                      onClick={() => handleEditClick(program)}
-                      className="btn-secondary py-2 px-3 sm:px-4 shadow-none text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl group-hover:border-white/10 transition-colors flex-1 sm:flex-none"
-                    >
-                      <Edit3 size={15} strokeWidth={1.5} /> 
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => updateStatus(program._id, program.status)}
-                      className="btn-secondary py-2 px-3 sm:px-4 shadow-none text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl group-hover:border-white/10 transition-colors flex-1 sm:flex-none"
-                    >
-                      <Settings size={15} strokeWidth={1.5} /> 
-                      Status
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(program)}
-                      className="btn-secondary py-2 px-3 shadow-none text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 text-sm flex items-center justify-center gap-1.5 rounded-xl transition-all"
-                    >
-                      <Trash2 size={15} strokeWidth={1.5} /> 
-                    </button>
-                  </div>
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={() => handleEditClick(program)}
+                        className="btn-secondary py-2 px-3 sm:px-4 shadow-none text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl group-hover:border-white/10 transition-colors flex-1 sm:flex-none"
+                      >
+                        <Edit3 size={15} strokeWidth={1.5} /> 
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => updateStatus(program._id, program.status)}
+                        className="btn-secondary py-2 px-3 sm:px-4 shadow-none text-sm flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl group-hover:border-white/10 transition-colors flex-1 sm:flex-none"
+                      >
+                        <Settings size={15} strokeWidth={1.5} /> 
+                        Status
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(program)}
+                        className="btn-secondary py-2 px-3 shadow-none text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 text-sm flex items-center justify-center gap-1.5 rounded-xl transition-all"
+                      >
+                        <Trash2 size={15} strokeWidth={1.5} /> 
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

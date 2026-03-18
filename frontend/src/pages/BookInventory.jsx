@@ -15,8 +15,7 @@ import {
   Edit3,
   Calendar,
   Settings,
-  AlertCircle,
-  RotateCcw
+  AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,7 +31,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete, onAssign, onCollect, onEditSave, onUnassign, onRevert }) => {
+const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete, onAssign, onCollect, onEditSave, onUnassign, onRevert, isReadOnly }) => {
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignUserIds, setAssignUserIds] = useState([]);
   
@@ -78,7 +77,7 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
           className="rounded border-brand-border text-brand-orange focus:ring-brand-orange disabled:opacity-30 disabled:cursor-not-allowed"
           checked={isSelected}
           onChange={() => onToggleSelect(book._id)}
-          disabled={book.status !== 'Available'}
+          disabled={isReadOnly || book.status !== 'Available'}
         />
       </td>
       <td className="px-2 md:px-4 py-5 font-mono font-medium text-white">#{book.bookNumber}</td>
@@ -108,7 +107,7 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
       </td>
       <td className="px-2 md:px-4 py-5">
         {book.status === 'Available' ? (
-          isAssigning ? (
+          !isReadOnly && isAssigning ? (
             <div className="flex flex-col gap-1 min-w-[150px]">
               <div className="max-h-24 overflow-y-auto border border-brand-border/30 rounded-lg p-1.5 bg-brand-card-bg flex flex-col gap-0.5">
                 {users.map(u => (
@@ -131,13 +130,15 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
                 <button onClick={() => setIsAssigning(false)} className="text-white/30 hover:text-white px-2 py-1 text-xs">×</button>
               </div>
             </div>
-          ) : (
+          ) : !isReadOnly ? (
             <button 
               onClick={startAssign}
               className="text-brand-orange text-[11px] font-bold hover:text-brand-orange-light transition-colors"
             >
               Assign Member(s)
             </button>
+          ) : (
+            <span className="text-white/30 text-[11px] italic">Not Assigned</span>
           )
         ) : (
           <div className="flex flex-col">
@@ -152,7 +153,7 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
         {book.collectionAmount > 0 ? `₹${book.collectionAmount.toLocaleString('en-IN')}` : '-'}
       </td>
       <td className="px-2 md:px-4 py-5 text-right relative min-w-[124px]">
-        {isEditing ? (
+        {!isReadOnly && isEditing ? (
           <form onSubmit={handleEditSubmit} className="flex flex-col gap-2 items-end min-w-[200px] bg-brand-card-bg p-3 rounded-xl border border-brand-border shadow-lg absolute right-2 md:right-6 z-10">
             <div className="text-xs font-semibold text-white/50 uppercase w-full text-left mb-1">Edit Assignment</div>
             <select 
@@ -193,7 +194,7 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
               <button type="submit" className="btn-primary py-1 px-3 text-[10px] flex-1">Save</button>
             </div>
           </form>
-        ) : (
+        ) : !isReadOnly ? (
           <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
              {book.status === 'Available' && (
                <button onClick={() => onDelete(book._id)} className="text-red-500 hover:text-red-400 p-2 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-opacity" title="Delete unassigned book">
@@ -254,13 +255,15 @@ const BookRow = React.memo(({ book, users, isSelected, onToggleSelect, onDelete,
                </button>
             )}
           </div>
+        ) : (
+          <span className="text-white/20 text-[10px] italic">Read Only</span>
         )}
       </td>
     </tr>
   );
 });
 
-const MobileBookCard = React.memo(({ book, users, isSelected, onToggleSelect, onDelete, onAssign, onCollect, onEditSave, onUnassign, onRevert }) => {
+const MobileBookCard = React.memo(({ book, users, isSelected, onToggleSelect, onDelete, onAssign, onCollect, onEditSave, onUnassign, onRevert, isReadOnly }) => {
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignUserIds, setAssignUserIds] = useState([]);
   const [isCollecting, setIsCollecting] = useState(false);
@@ -290,6 +293,7 @@ const MobileBookCard = React.memo(({ book, users, isSelected, onToggleSelect, on
               className="rounded border-brand-border text-brand-orange focus:ring-brand-orange mt-1"
               checked={isSelected}
               onChange={() => onToggleSelect(book._id)}
+              disabled={isReadOnly}
             />
           )}
           <div>
@@ -422,17 +426,17 @@ const MobileBookCard = React.memo(({ book, users, isSelected, onToggleSelect, on
       {/* Action Buttons */}
       {!isAssigning && !isCollecting && !isEditing && (
         <div className="flex flex-wrap gap-2">
-          {book.status === 'Available' && !isAssigning && (
+          {book.status === 'Available' && !isAssigning && !isReadOnly && (
             <button onClick={startAssign} className="text-brand-orange text-xs font-bold px-3 py-2 bg-brand-orange/10 rounded-lg border border-brand-orange/20 active:scale-95 transition-transform">
               Assign
             </button>
           )}
-          {book.status === 'Available' && (
+          {book.status === 'Available' && !isReadOnly && (
             <button onClick={() => onDelete(book._id)} className="text-red-500 text-xs font-bold px-3 py-2 bg-red-500/10 rounded-lg border border-red-500/20 active:scale-95 transition-transform">
               Delete
             </button>
           )}
-          {(book.status === 'In Progress' || book.status === 'Partial' || book.status === 'ASSIGNED' || book.status === 'Returned' || book.status === 'Completed') && !isCollecting && (
+          {(book.status === 'In Progress' || book.status === 'Partial' || book.status === 'ASSIGNED' || book.status === 'Returned' || book.status === 'Completed') && !isCollecting && !isReadOnly && (
             <button
               onClick={startCollect}
               className="text-xs font-bold px-3 py-2 bg-emerald-600 text-white rounded-lg active:scale-95 transition-transform flex items-center gap-1.5"
@@ -441,20 +445,23 @@ const MobileBookCard = React.memo(({ book, users, isSelected, onToggleSelect, on
               {book.collectionAmount > 0 ? 'Update' : 'Add'} Amt
             </button>
           )}
-          {(book.status === 'In Progress' || book.status === 'Partial' || book.status === 'ASSIGNED' || book.status === 'Returned' || book.status === 'Completed') && !isEditing && (
+          {(book.status === 'In Progress' || book.status === 'Partial' || book.status === 'ASSIGNED' || book.status === 'Returned' || book.status === 'Completed') && !isEditing && !isReadOnly && (
             <button onClick={startEdit} className="text-xs font-bold px-3 py-2 bg-white/5 text-white/70 rounded-lg border border-white/10 active:scale-95 transition-transform">
               Edit
             </button>
           )}
-          {book.status !== 'Available' && book.collectionAmount === 0 && !isEditing && (
+          {book.status !== 'Available' && book.collectionAmount === 0 && !isEditing && !isReadOnly && (
             <button onClick={() => onUnassign(book._id)} className="text-xs font-bold px-3 py-2 text-red-400 bg-red-500/10 rounded-lg border border-red-500/20 active:scale-95 transition-transform">
               Unassign
             </button>
           )}
-          {(book.status === 'Returned' || book.status === 'Completed' || book.collectionAmount > 0) && !isEditing && (
+          {(book.status === 'Returned' || book.status === 'Completed' || book.collectionAmount > 0) && !isEditing && !isReadOnly && (
             <button onClick={() => onRevert(book._id)} className="text-xs font-bold px-3 py-2 text-orange-400 bg-orange-500/10 rounded-lg border border-orange-500/20 active:scale-95 transition-transform">
               Revert
             </button>
+          )}
+          {isReadOnly && (
+            <span className="text-white/20 text-[10px] italic py-2">Read Only</span>
           )}
         </div>
       )}
@@ -493,21 +500,10 @@ const BookInventory = () => {
   const [isSavingFinance, setIsSavingFinance] = useState(false);
 
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('role');
+  const isReadOnly = userRole === 'Executive';
 
-  const handleSyncTotals = async () => {
-    if (!selectedProgram) return;
-    const loadingToast = toast.loading('Syncing program totals...');
-    try {
-      const token = localStorage.getItem('token');
-      await api.get(`/programs/${selectedProgram}/recalculate`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Totals synchronized successfully', { id: loadingToast });
-      fetchInitialData();
-    } catch (error) {
-      toast.error('Failed to sync totals', { id: loadingToast });
-    }
-  };
+
 
   const currentProgram = programs.find(p => p._id === selectedProgram);
 
@@ -580,9 +576,16 @@ const BookInventory = () => {
   const fetchInitialData = async () => {
     try {
       const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // Silently recalculate totals for the selected program
+      if (selectedProgram) {
+        api.get(`/programs/${selectedProgram}/recalculate`, { headers }).catch(() => {});
+      }
+
       const [programsRes, usersRes] = await Promise.all([
-        api.get('/programs', { headers: { Authorization: `Bearer ${token}` } }),
-        api.get('/auth/users', { headers: { Authorization: `Bearer ${token}` } })
+        api.get('/programs', { headers }),
+        api.get('/auth/users', { headers })
       ]);
       setPrograms(programsRes.data);
       setUsers(usersRes.data);
@@ -826,7 +829,7 @@ const BookInventory = () => {
     <div className="min-h-screen pb-24 bg-brand-grey">
       <header className="bg-brand-card-bg/80 backdrop-blur-xl border-b border-brand-border/50 sticky top-0 z-50 px-4 sm:px-6 h-14 sm:h-[4.5rem] flex items-center justify-between">
         <div className="flex items-center gap-3 sm:gap-4">
-          <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 hover:bg-brand-border/50 rounded-full text-white transition-colors">
+          <button onClick={() => navigate(isReadOnly ? '/portal' : '/dashboard')} className="p-2 -ml-2 hover:bg-brand-border/50 rounded-full text-white transition-colors">
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <h1 className="text-base sm:text-lg font-semibold tracking-tight m-0 text-white">Book Inventory</h1>
@@ -849,22 +852,24 @@ const BookInventory = () => {
             </select>
           </div>
           
-          <div className="flex gap-2 sm:gap-4 w-full md:w-auto">
-            <button 
-              onClick={() => setShowAddType(!showAddType)} 
-              disabled={!selectedProgram}
-              className="btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 flex items-center justify-center gap-1.5 sm:gap-2 flex-1 md:flex-none shadow-sm rounded-xl font-semibold text-sm"
-            >
-              <Plus size={16} strokeWidth={2} /> <span className="hidden sm:inline">Book</span> Type
-            </button>
-            <button 
-              onClick={() => setShowAddBooks(!showAddBooks)} 
-              disabled={!selectedProgram || bookTypes.length === 0}
-              className="btn-primary py-2.5 sm:py-3 px-4 sm:px-6 flex items-center justify-center gap-1.5 sm:gap-2 flex-1 md:flex-none shadow-sm rounded-xl font-semibold text-sm"
-            >
-              <Plus size={16} strokeWidth={2} /> Generate
-            </button>
-          </div>
+          {!isReadOnly && (
+            <div className="flex gap-2 sm:gap-4 w-full md:w-auto">
+              <button 
+                onClick={() => setShowAddType(!showAddType)} 
+                disabled={!selectedProgram}
+                className="btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 flex items-center justify-center gap-1.5 sm:gap-2 flex-1 md:flex-none shadow-sm rounded-xl font-semibold text-sm"
+              >
+                <Plus size={16} strokeWidth={2} /> <span className="hidden sm:inline">Book</span> Type
+              </button>
+              <button 
+                onClick={() => setShowAddBooks(!showAddBooks)} 
+                disabled={!selectedProgram || bookTypes.length === 0}
+                className="btn-primary py-2.5 sm:py-3 px-4 sm:px-6 flex items-center justify-center gap-1.5 sm:gap-2 flex-1 md:flex-none shadow-sm rounded-xl font-semibold text-sm"
+              >
+                <Plus size={16} strokeWidth={2} /> Generate
+              </button>
+            </div>
+          )}
         </div>
 
         {selectedProgram && currentProgram && (
@@ -874,53 +879,68 @@ const BookInventory = () => {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/10 text-emerald-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-emerald-500/20">
                   <CircleDollarSign size={16} />
                 </div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest">Collections</p>
-                  <button 
-                    onClick={handleSyncTotals}
-                    className="p-0.5 sm:p-1 px-1 sm:px-2 text-[7px] sm:text-[9px] uppercase font-bold text-white/40 hover:text-emerald-400 bg-white/5 hover:bg-emerald-500/10 rounded-md sm:rounded-lg border border-white/10 hover:border-emerald-500/20 transition-all flex items-center gap-1"
-                    title="Recalculate Totals"
-                  >
-                    <RotateCcw size={8} /> Sync
-                  </button>
-                </div>
+                <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Collections</p>
                 <h3 className="text-lg sm:text-3xl font-semibold text-emerald-400 tracking-tight">₹{currentProgram.totalMoneyCollected?.toLocaleString('en-IN') || 0}</h3>
               </div>
               <p className="text-[8px] sm:text-[10px] text-white/30 uppercase mt-2 sm:mt-4 font-bold tracking-tighter hidden sm:block">Coupon Book Income</p>
             </div>
             
-            <button 
-              onClick={() => { setFinanceType('Expenses'); setShowFinances(true); }}
-              className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left group hover:border-red-500/30 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-            >
-              <div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/10 text-red-500 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-red-500/20 group-hover:bg-red-500/20 transition-colors">
-                  <Receipt size={16} />
+            {isReadOnly ? (
+              <div className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+                <div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/10 text-red-500 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-red-500/20">
+                    <Receipt size={16} />
+                  </div>
+                  <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Expenses</p>
+                  <h3 className="text-lg sm:text-3xl font-semibold text-red-400 tracking-tight">₹{currentProgram.totalExpenses?.toLocaleString('en-IN') || 0}</h3>
                 </div>
-                <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Expenses</p>
-                <h3 className="text-lg sm:text-3xl font-semibold text-red-400 tracking-tight">₹{currentProgram.totalExpenses?.toLocaleString('en-IN') || 0}</h3>
               </div>
-              <p className="text-[8px] sm:text-[10px] text-white/30 uppercase mt-2 sm:mt-4 group-hover:text-white/50 transition-colors items-center gap-2 hidden sm:flex">Manage Expenses <ArrowLeft size={10} className="rotate-180" /></p>
-            </button>
+            ) : (
+              <button 
+                onClick={() => { setFinanceType('Expenses'); setShowFinances(true); }}
+                className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left group hover:border-red-500/30 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+              >
+                <div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/10 text-red-500 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-red-500/20 group-hover:bg-red-500/20 transition-colors">
+                    <Receipt size={16} />
+                  </div>
+                  <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Expenses</p>
+                  <h3 className="text-lg sm:text-3xl font-semibold text-red-400 tracking-tight">₹{currentProgram.totalExpenses?.toLocaleString('en-IN') || 0}</h3>
+                </div>
+                <p className="text-[8px] sm:text-[10px] text-white/30 uppercase mt-2 sm:mt-4 group-hover:text-white/50 transition-colors items-center gap-2 hidden sm:flex">Manage Expenses <ArrowLeft size={10} className="rotate-180" /></p>
+              </button>
+            )}
 
-            <button 
-              onClick={() => { setFinanceType('Sponsors'); setShowFinances(true); }}
-              className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left group hover:border-blue-500/30 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-            >
-              <div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/10 text-blue-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
-                  <Users2 size={16} />
+            {isReadOnly ? (
+              <div className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+                <div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/10 text-blue-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-blue-500/20">
+                    <Users2 size={16} />
+                  </div>
+                  <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Sponsors</p>
+                  <h3 className="text-lg sm:text-3xl font-semibold text-blue-400 tracking-tight">₹{currentProgram.totalSponsorship?.toLocaleString('en-IN') || 0}</h3>
                 </div>
-                <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Sponsors</p>
-                <h3 className="text-lg sm:text-3xl font-semibold text-blue-400 tracking-tight">₹{currentProgram.totalSponsorship?.toLocaleString('en-IN') || 0}</h3>
               </div>
-              <p className="text-[8px] sm:text-[10px] text-white/30 uppercase mt-2 sm:mt-4 group-hover:text-white/50 transition-colors items-center gap-2 hidden sm:flex">Manage Sponsors <ArrowLeft size={10} className="rotate-180" /></p>
-            </button>
+            ) : (
+              <button 
+                onClick={() => { setFinanceType('Sponsors'); setShowFinances(true); }}
+                className="card bg-brand-card-bg border-brand-border/30 p-3 sm:p-6 flex flex-col justify-between text-left group hover:border-blue-500/30 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
+              >
+                <div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/10 text-blue-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
+                    <Users2 size={16} />
+                  </div>
+                  <p className="text-[8px] sm:text-[10px] text-white/50 font-semibold uppercase tracking-widest mb-1">Sponsors</p>
+                  <h3 className="text-lg sm:text-3xl font-semibold text-blue-400 tracking-tight">₹{currentProgram.totalSponsorship?.toLocaleString('en-IN') || 0}</h3>
+                </div>
+                <p className="text-[8px] sm:text-[10px] text-white/30 uppercase mt-2 sm:mt-4 group-hover:text-white/50 transition-colors items-center gap-2 hidden sm:flex">Manage Sponsors <ArrowLeft size={10} className="rotate-180" /></p>
+              </button>
+            )}
           </div>
         )}
 
         {/* Bulk Action Bar */}
-        {selectedBookIds.length > 0 && (
+        {!isReadOnly && selectedBookIds.length > 0 && (
           <div className="bg-brand-orange-dark text-white rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-center justify-between shadow-lg slide-in-bottom">
             <span className="font-semibold text-xs sm:text-sm tracking-wide">{selectedBookIds.length} Selected</span>
             <button 
@@ -1076,6 +1096,7 @@ const BookInventory = () => {
                       onEditSave={handleSaveAssignmentEdit}
                       onUnassign={handleUnassignBook}
                       onRevert={handleRevertCollection}
+                      isReadOnly={isReadOnly}
                     />
                   ))
                 )}
@@ -1104,6 +1125,7 @@ const BookInventory = () => {
                     onEditSave={handleSaveAssignmentEdit}
                     onUnassign={handleUnassignBook}
                     onRevert={handleRevertCollection}
+                    isReadOnly={isReadOnly}
                   />
                 ))}
               </div>
@@ -1144,7 +1166,7 @@ const BookInventory = () => {
       </main>
 
       {/* Finance Management Modal */}
-      {showFinances && (
+      {!isReadOnly && showFinances && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
           <div className="absolute inset-0 bg-brand-grey/80 backdrop-blur-sm" onClick={() => setShowFinances(false)}></div>
           <div className="card w-full sm:max-w-2xl bg-brand-card-bg border-brand-border/50 shadow-[0_20px_60px_rgb(0,0,0,0.5)] relative z-10 overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] rounded-t-[1.5rem] sm:rounded-[1.5rem] rounded-b-none sm:rounded-b-[1.5rem] slide-in-bottom">

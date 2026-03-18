@@ -45,13 +45,13 @@ const Dashboard = () => {
   const StatCard = ({ title, value, icon, color, bg, wide }) => {
     const IconComponent = icon;
     return (
-      <div className={`card flex items-center gap-4 sm:gap-6 group hover:translate-y-[-2px] ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
+      <div className={`card flex items-center gap-3 sm:gap-6 group hover:translate-y-[-2px] ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
         <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center ${bg} shadow-sm border border-brand-border/50 transition-colors duration-500 shrink-0`}>
           <IconComponent className={color} size={22} strokeWidth={1.5} />
         </div>
         <div className="min-w-0">
           <p className="text-[10px] sm:text-[11px] text-white/60 font-semibold uppercase tracking-widest mb-1">{title}</p>
-          <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight truncate">
+          <h3 className="text-lg sm:text-3xl font-semibold text-white tracking-tight whitespace-nowrap">
             {title.includes('Collection') ? `₹${value.toLocaleString('en-IN')}` : value}
           </h3>
         </div>

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import Collection from '../models/Collection.js';
 import { CouponBook } from '../models/CouponBook.js';
 import Program from '../models/Program.js';
-import { protect, treasurerOnly } from '../middleware/auth.js';
+import { protect, treasurerOnly, treasurerOrExecutive } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -138,7 +138,7 @@ router.delete('/:id', protect, treasurerOnly, async (req, res) => {
 // @desc    Get aggregate stats for dashboard
 // @route   GET /api/collections/stats
 // @access  Private (Treasurer)
-router.get('/stats', protect, treasurerOnly, async (req, res) => {
+router.get('/stats', protect, treasurerOrExecutive, async (req, res) => {
   try {
     // Basic stats for the dashboard
     const programs = await mongoose.model('Program').find({});
