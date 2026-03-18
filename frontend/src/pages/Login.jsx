@@ -42,33 +42,38 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative bg-brand-grey">
+    <div className="min-h-screen flex items-center justify-center p-5 relative bg-brand-grey">
+      {/* Ambient glow */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[80%] h-[40%] rounded-full bg-brand-orange/8 blur-[120px]" />
+      </div>
+
       <button 
         onClick={() => navigate('/')}
-        className="absolute top-8 left-8 p-3 rounded-full hover:bg-brand-border/50 transition-colors text-white"
+        className="absolute top-6 left-6 sm:top-8 sm:left-8 p-3 rounded-full hover:bg-brand-border/50 transition-colors text-white/60 hover:text-white active:scale-[0.95]"
         aria-label="Back to home"
       >
-        <ArrowLeft size={24} strokeWidth={1.5} />
+        <ArrowLeft size={22} strokeWidth={1.5} />
       </button>
 
-      <div className="card w-full max-w-md p-10 mt-12 md:mt-0">
+      <div className="card w-full max-w-md p-8 sm:p-10 mt-12 md:mt-0 relative z-10 fade-in-up shadow-[0_8px_40px_rgb(0,0,0,0.35)]">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-brand-charcoal text-white rounded-[1.25rem] flex items-center justify-center mx-auto mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-            <LogIn size={28} strokeWidth={1.5} />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-brand-dark-bg text-white rounded-[1.25rem] flex items-center justify-center mx-auto mb-6 shadow-[0_8px_20px_rgb(0,0,0,0.2)] border border-brand-border/30">
+            <LogIn size={26} strokeWidth={1.5} />
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-white">Access Portal</h2>
-          <p className="text-white/60 mt-2 font-light text-sm">Sign in to your Gladiators account</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">Access Portal</h2>
+          <p className="text-white/45 mt-2 font-light text-sm">Sign in to your Gladiators account</p>
         </div>
 
         {error && (
-          <div className="bg-red-50/50 text-red-600 p-4 rounded-2xl text-sm mb-8 border border-red-100 text-center font-medium">
+          <div className="bg-red-500/10 text-red-400 p-4 rounded-2xl text-sm mb-8 border border-red-500/20 text-center font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5 text-white/50">
               Phone Number
             </label>
             <input
@@ -82,7 +87,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5 text-white/50">
               Password
             </label>
             <input

@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-charcoal: #1f2937; /* deep charcoal - keep for text */
-  --color-brand-orange: #f97316; /* warm orange / sports accent - keep */
-  --color-brand-grey: #111827; /* dark grey background */
-  --color-brand-white: #ffffff; /* white - keep for text on dark */
-  --color-brand-dark-bg: #0f172a; /* very dark background */
-  --color-brand-card-bg: #1e293b; /* card background */
-  --color-brand-border: #374151; /* border color */
+  --color-brand-charcoal: #1f2937;
+  --color-brand-orange: #f97316;
+  --color-brand-grey: #0c1017;
+  --color-brand-white: #ffffff;
+  --color-brand-dark-bg: #0a0e17;
+  --color-brand-card-bg: #161d2e;
+  --color-brand-border: #2a3347;
 
   /* Additional shades for depth */
   --color-brand-charcoal-light: #6b7280;
@@ -15,31 +15,67 @@
   --color-brand-orange-dark: #ea580c;
   --color-brand-grey-dark: #374151;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Outfit', system-ui, sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-heading: 'Sora', system-ui, sans-serif;
 }
 
+/* ── Base ─────────────────────────────────────── */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-brand-grey text-white font-sans antialiased min-h-screen;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold text-white;
   }
+
+  /* Prevent iOS zoom on inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: inherit !important;
+    }
+  }
 }
 
+/* ── Components ───────────────────────────────── */
 @layer components {
   .btn-primary {
-    @apply bg-brand-orange text-white px-6 py-3 rounded-2xl font-medium shadow-[0_8px_30px_rgb(249,115,22,0.3)] hover:shadow-[0_8px_30px_rgb(249,115,22,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:ring-offset-2 focus:ring-offset-brand-grey transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
+    @apply bg-brand-orange text-white px-6 py-3.5 rounded-2xl font-semibold
+    shadow-[0_4px_20px_rgb(249,115,22,0.25)]
+    hover:shadow-[0_8px_30px_rgb(249,115,22,0.35)] hover:-translate-y-0.5
+    focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:ring-offset-2 focus:ring-offset-brand-grey
+    transition-all duration-300 w-full sm:w-auto text-center
+    active:scale-[0.97] active:shadow-none;
+    min-height: 48px;
   }
 
   .btn-secondary {
-    @apply bg-brand-card-bg/80 backdrop-blur-md text-white border border-brand-border px-6 py-3 rounded-2xl font-medium shadow-[0_2px_10px_rgb(0,0,0,0.2)] hover:bg-brand-card-bg hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:ring-offset-2 focus:ring-offset-brand-grey transition-all duration-300 w-full sm:w-auto text-center active:scale-[0.98];
+    @apply bg-brand-card-bg/80 backdrop-blur-md text-white border border-brand-border
+    px-6 py-3.5 rounded-2xl font-semibold
+    shadow-[0_2px_10px_rgb(0,0,0,0.15)]
+    hover:bg-brand-card-bg hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)]
+    focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:ring-offset-2 focus:ring-offset-brand-grey
+    transition-all duration-300 w-full sm:w-auto text-center
+    active:scale-[0.97];
+    min-height: 48px;
   }
-  
+
   .card {
-    @apply bg-brand-card-bg rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-brand-border/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all duration-500;
+    @apply bg-brand-card-bg rounded-[1.25rem] p-5
+    shadow-[0_4px_24px_rgb(0,0,0,0.25)]
+    border border-brand-border/40
+    transition-all duration-300;
   }
 
   @media (min-width: 640px) {
@@ -49,7 +85,12 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-brand-border bg-brand-card-bg/50 focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:border-transparent focus:bg-brand-card-bg transition-all duration-300 text-white placeholder:text-gray-400 text-base;
+    @apply w-full px-4 py-3.5 rounded-xl border border-brand-border
+    bg-brand-dark-bg/60
+    focus:outline-none focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/40
+    focus:bg-brand-dark-bg
+    transition-all duration-200 text-white placeholder:text-white/30 text-base;
+    min-height: 48px;
   }
 
   @media (min-width: 640px) {
@@ -59,18 +100,84 @@
   }
 }
 
-/* Utilities for glassmorphism / specific effects */
+/* ── Utilities ────────────────────────────────── */
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgb(0,0,0,0.08)];
+    @apply bg-brand-card-bg/60 backdrop-blur-xl border border-brand-border/30
+    shadow-[0_8px_32px_rgb(0,0,0,0.15)];
   }
 }
 
-/* Slide-in animation for modals */
+/* ── Animations ───────────────────────────────── */
+
+/* Slide-in bottom for modals */
 @keyframes slideInBottom {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 .slide-in-bottom {
   animation: slideInBottom 0.3s ease-out;
+}
+
+/* Fade-in with upward motion */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Stagger delays */
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.3s; }
+.delay-7 { animation-delay: 0.35s; }
+.delay-8 { animation-delay: 0.4s; }
+
+/* Simple fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+/* Pulse dot for live indicators */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* Scale-in for cards */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Safe area padding for mobile notch / home bar */
+.safe-bottom {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }

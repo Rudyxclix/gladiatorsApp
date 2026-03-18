@@ -826,10 +826,10 @@ const BookInventory = () => {
   }, [selectedProgram, currentPage]);
 
   return (
-    <div className="min-h-screen pb-24 bg-brand-grey">
-      <header className="bg-brand-card-bg/80 backdrop-blur-xl border-b border-brand-border/50 sticky top-0 z-50 px-4 sm:px-6 h-14 sm:h-[4.5rem] flex items-center justify-between">
+    <div className="min-h-screen pb-24 bg-brand-grey safe-bottom">
+      <header className="bg-brand-card-bg/70 backdrop-blur-xl border-b border-brand-border/40 sticky top-0 z-50 px-4 sm:px-6 h-14 sm:h-[4.5rem] flex items-center justify-between">
         <div className="flex items-center gap-3 sm:gap-4">
-          <button onClick={() => navigate(isReadOnly ? '/portal' : '/dashboard')} className="p-2 -ml-2 hover:bg-brand-border/50 rounded-full text-white transition-colors">
+          <button onClick={() => navigate(isReadOnly ? '/portal' : '/dashboard')} className="p-2.5 -ml-2 hover:bg-brand-border/40 rounded-full text-white/60 hover:text-white transition-colors active:scale-[0.95]">
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
           <h1 className="text-base sm:text-lg font-semibold tracking-tight m-0 text-white">Book Inventory</h1>
@@ -839,9 +839,9 @@ const BookInventory = () => {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-12">
         <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-12">
           <div className="w-full md:w-1/3">
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-white/60">Select Program Context</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5 text-white/45">Select Program Context</label>
             <select 
-              className="input-field shadow-sm bg-brand-card-bg/50"
+              className="input-field shadow-sm"
               value={selectedProgram}
               onChange={(e) => setSelectedProgram(e.target.value)}
             >
