@@ -472,8 +472,8 @@ router.put('/inventory/:id/assignment/edit', protect, treasurerOnly, async (req,
       const typeSameProgram = book.bookType && toProgramId(book.bookType.program) === toProgramId(book.program);
       const newAmount = parseFloat(collectionAmount);
       if (typeSameProgram && book.bookType.amountType === 'Fixed') {
-        const maxPossible = book.bookType.fixedAmount * book.bookType.leavesPerBook;
-        if (newAmount > maxPossible) {
+        const maxPossible = Number(book.bookType.fixedAmount) * Number(book.bookType.leavesPerBook);
+        if (Math.round(newAmount) > Math.round(maxPossible)) {
           return res.status(400).json({ message: `Cannot exceed maximum book value of ₹${maxPossible}` });
         }
       }

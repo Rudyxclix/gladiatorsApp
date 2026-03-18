@@ -33,8 +33,11 @@ router.post('/', protect, async (req, res) => {
     // Fixed amount cap only when book type belongs to same program
     const typeProgramStr = book.bookType?.program != null ? String(book.bookType.program.toString?.() || book.bookType.program) : null;
     if (book.bookType && typeProgramStr === bookProgramStr && book.bookType.amountType === 'Fixed') {
-      const maxPossible = book.bookType.fixedAmount * book.bookType.leavesPerBook;
-      if (book.collectionAmount + amount > maxPossible) {
+      const maxPossible = Number(book.bookType.fixedAmount) * Number(book.bookType.leavesPerBook);
+      const currentAmount = Number(book.collectionAmount || 0);
+      const incomingAmount = Number(amount);
+      
+      if (Math.round(currentAmount + incomingAmount) > Math.round(maxPossible)) {
         return res.status(400).json({ message: `Cannot exceed maximum book value of ₹${maxPossible}` });
       }
     }
