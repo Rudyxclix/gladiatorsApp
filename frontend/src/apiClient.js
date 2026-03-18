@@ -12,4 +12,43 @@ const api = axios.create({
   },
 });
 
+// ── Request Interceptor ──
+// Automatically attach JWT token from localStorage to every outgoing request.
+// This ensures the token is always fresh from storage, even after the app
+// has been minimized/backgrounded on mobile and resumed later.
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ── Response Interceptor ──
+// Globally handle 401 (Unauthorized) responses. Instead of letting the error
+// crash the UI, we clear stale auth data and redirect to the login page.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Only redirect if we're not already on the login page
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      if (!isLoginRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('user');
+
+        // Use window.location for a hard redirect to clear all React state
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

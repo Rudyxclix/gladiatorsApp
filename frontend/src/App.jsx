@@ -20,6 +20,24 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Validate token expiry by decoding the payload (base64)
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      // Token has expired — clean up and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user');
+      return <Navigate to="/login" replace />;
+    }
+  } catch {
+    // Malformed token — clean up and redirect
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    return <Navigate to="/login" replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />; // Or an unauthorized page
   }
